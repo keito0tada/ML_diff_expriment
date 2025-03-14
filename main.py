@@ -24,19 +24,19 @@ OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output"
 
 DATASETS = [
     "mnist",
-    # "cifar10",
-    # "cifar100",
-    # "pathmnist",
-    # "dermamnist",
-    # "octmnist",
-    # "pneumoniamnist",
-    # "retinamnist",
-    # "breastmnist",
-    # "bloodmnist",
-    # "tissuemnist",
-    # "organamnist",
-    # "organcmnist",
-    # "organsmnist",
+    "cifar10",
+    "cifar100",
+    "pathmnist",
+    "dermamnist",
+    "octmnist",
+    "pneumoniamnist",
+    "retinamnist",
+    "breastmnist",
+    "bloodmnist",
+    "tissuemnist",
+    "organamnist",
+    "organcmnist",
+    "organsmnist",
 ]
 
 NOW = now()
@@ -254,13 +254,13 @@ def generate_model_with_dataset_excluded_by_class(
 
 
 for data_flag in DATASETS:
-    generate_default_model(data_flag, 1)
+    generate_default_model(data_flag, 100)
 
     for rate in np.arange(0.05, 0.5, 0.05).astype(float):
-        generate_model_with_dataset_reduced_by_rate(data_flag, 1, rate=rate)
+        generate_model_with_dataset_reduced_by_rate(data_flag, 100, rate=rate)
 
-    for rate in [0.5, 1.0]:
-        for target_class in range(13):
-            generate_model_with_dataset_excluded_by_class(
-                data_flag, 1, target_class=target_class, rate=rate
-            )
+    # for rate in [0.5, 1.0]:
+    #     for target_class in range(13):
+    #         generate_model_with_dataset_excluded_by_class(
+    #             data_flag, 100, target_class=target_class, rate=rate
+    #         )
