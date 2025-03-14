@@ -1,6 +1,7 @@
 import os
 import pickle
 
+import numpy as np
 import torch
 from tensorboardX import SummaryWriter
 
@@ -20,6 +21,7 @@ from train import train
 fix_seeds(0)
 
 ENV = "ayame"
+DEVICE = "cuda:0"
 
 # OUTPUT_DIR = "output"
 OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output2"
@@ -294,13 +296,15 @@ def generate_model_with_dataset_excluded_by_class(
 
 
 for data_flag in DATASETS:
-    generate_default_model(data_flag, 1)
+    generate_default_model(data_flag, 100, device=DEVICE)
 
-    # for rate in np.arange(0.05, 0.1, 0.05).astype(float):
-    #     generate_model_with_dataset_reduced_by_rate(data_flag, 1, rate=rate)
+    for rate in np.arange(0.05, 0.1, 0.05).astype(float):
+        generate_model_with_dataset_reduced_by_rate(
+            data_flag, 100, rate=rate, device=DEVICE
+        )
 
-    # for rate in [0.5, 1.0]:
-    #     for target_class in range(1):
-    #         generate_model_with_dataset_excluded_by_class(
-    #             data_flag, 1, target_class=target_class, rate=rate
-    #         )
+    for rate in np.arange(0.5, 1.0, 0.05).astype(float):
+        for target_class in range(1):
+            generate_model_with_dataset_excluded_by_class(
+                data_flag, 100, target_class=target_class, rate=rate, device=DEVICE
+            )
