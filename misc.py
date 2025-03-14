@@ -14,7 +14,7 @@ def fix_seeds(seed=0):
 
 
 def now() -> str:
-    return datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
+    return datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
 
 NOW = now()

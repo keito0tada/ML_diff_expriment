@@ -11,10 +11,10 @@ from dataset import (
 from misc import fix_seeds, now
 from model import get_resnet18
 from train import train
-from verify import get_acc
 
-OUTPUT_DIR = "output"
-# OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output"
+# OUTPUT_DIR = "output"
+OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output"
+ENV = "ayame"
 
 DATASETS = [
     "mnist",
@@ -61,7 +61,7 @@ def main(data_flag: str, num_epochs: int = 100, device="cuda:0"):
 
     model = get_resnet18(num_channels=num_channels, num_classes=num_classes)
     train(
-        os.path.join(OUTPUT_DIR, data_flag, NOW),
+        os.path.join(OUTPUT_DIR, data_flag, f"{NOW}_{ENV}"),
         model,
         num_classes,
         train_dataset,
@@ -71,7 +71,9 @@ def main(data_flag: str, num_epochs: int = 100, device="cuda:0"):
         num_epochs=num_epochs,
     )
 
-    with open(os.path.join(OUTPUT_DIR, data_flag, NOW, "experiment.txt"), "w") as f:
+    with open(
+        os.path.join(OUTPUT_DIR, data_flag, f"{NOW}_{ENV}", "experiment.txt"), "w"
+    ) as f:
         f.write(f"{data_flag}, {num_epochs}, default\n")
 
     print("==> Done.")
@@ -106,7 +108,7 @@ def main_rate(data_flag: str, num_epochs: int = 100, device="cuda:0", rate=0.1):
     model = get_resnet18(num_channels=num_channels, num_classes=num_classes)
 
     train(
-        f"output/{data_flag}/{NOW}",
+        os.path.join(OUTPUT_DIR, data_flag, f"{NOW}_{ENV}"),
         model,
         num_classes,
         train_dataset,
@@ -115,8 +117,10 @@ def main_rate(data_flag: str, num_epochs: int = 100, device="cuda:0", rate=0.1):
         device,
         num_epochs=num_epochs,
     )
-    print(get_acc(model, unseen_dataset, num_classes, 128, device))
-    with open(os.path.join(OUTPUT_DIR, data_flag, NOW, "experiment.txt"), "w") as f:
+
+    with open(
+        os.path.join(OUTPUT_DIR, data_flag, f"{NOW}_{ENV}", "experiment.txt"), "w"
+    ) as f:
         f.write(f"{data_flag}, {num_epochs}, rate, {rate}\n")
 
     print("==> Done.")
@@ -161,7 +165,7 @@ def main_class(
     model = get_resnet18(num_channels=num_channels, num_classes=num_classes)
 
     train(
-        f"output/{data_flag}/{NOW}",
+        os.path.join(OUTPUT_DIR, data_flag, f"{NOW}_{ENV}"),
         model,
         num_classes,
         train_dataset,
@@ -170,9 +174,10 @@ def main_class(
         device,
         num_epochs=num_epochs,
     )
-    print(len(unseen_dataset))
-    print(get_acc(model, unseen_dataset, num_classes, 128, device))
-    with open(os.path.join(OUTPUT_DIR, data_flag, NOW, "experiment.txt"), "w") as f:
+
+    with open(
+        os.path.join(OUTPUT_DIR, data_flag, f"{NOW}_{ENV}", "experiment.txt"), "w"
+    ) as f:
         f.write(f"{data_flag}, {num_epochs}, classes, {target_classes}, rate, {rate}\n")
 
     print("==> Done.")
@@ -188,4 +193,4 @@ def main_class(
 #         for target_classes in [[0]]:
 #             main_class(data_flag, 100, target_classes=target_classes, rate=rate)
 
-main("mnist", 100)
+main("mnist", 10)
