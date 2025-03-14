@@ -111,6 +111,9 @@ def train(
     logger_regular.info(f"test_loss: {test_loss}, test_acc: {test_acc}")
 
     torch.save(best_model.state_dict(), os.path.join(output_dir, "best_model.pth"))
+    logger_regular.info(
+        f"Best model saved to {os.path.join(output_dir, 'best_model.pth')}"
+    )
 
     writer.close()
 

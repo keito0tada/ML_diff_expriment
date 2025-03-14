@@ -116,7 +116,7 @@ def generate_model_with_dataset_reduced_by_rate(
     model = get_resnet18(num_channels=num_channels, num_classes=num_classes)
 
     train(
-        os.path.join(OUTPUT_DIR, data_flag, f"rate_{rate}_{NOW}_{ENV}"),
+        os.path.join(OUTPUT_DIR, data_flag, f"rate_{rate:.02f}_{NOW}_{ENV}"),
         model,
         num_classes,
         train_dataset,
@@ -172,7 +172,7 @@ def generate_model_with_dataset_excluded_by_class(
 
     train(
         os.path.join(
-            OUTPUT_DIR, data_flag, f"class_{target_class}_rate_{rate}_{NOW}_{ENV}"
+            OUTPUT_DIR, data_flag, f"class_{target_class}_rate_{rate:.2f}_{NOW}_{ENV}"
         ),
         model,
         num_classes,
