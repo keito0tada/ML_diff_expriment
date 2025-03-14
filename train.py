@@ -1,4 +1,3 @@
-import os
 import time
 from copy import deepcopy
 
@@ -14,12 +13,12 @@ from logger import logger_regular
 
 
 def train(
-    output_dir: str,
     model: nn.Module,
     num_classes: int,
     train_dataset: Dataset,
     val_dataset: Dataset,
     test_dataset: Dataset,
+    writer: SummaryWriter,
     device: str,
     num_epochs=100,
     batch_size=64,
@@ -60,7 +59,7 @@ def train(
         optimizer, milestones=milestones, gamma=gamma
     )
 
-    writer = SummaryWriter(log_dir=os.path.join(output_dir, "Tensorboard_Results"))
+    # writer = SummaryWriter(log_dir=os.path.join(output_dir, "Tensorboard_Results"))
 
     best_acc = 0
     best_epoch = 0
@@ -110,14 +109,11 @@ def train(
     ).item()
     logger_regular.info(f"test_loss: {test_loss}, test_acc: {test_acc}")
 
-    torch.save(best_model.state_dict(), os.path.join(output_dir, "best_model.pth"))
-    logger_regular.info(
-        f"Best model saved to {os.path.join(output_dir, 'best_model.pth')}"
-    )
-
     writer.close()
 
     logger_regular.info(f"==> Finished in {time.perf_counter() - start_time:.2f} s.")
+
+    return best_model
 
 
 def train_one_epoch(

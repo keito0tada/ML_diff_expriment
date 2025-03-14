@@ -5,6 +5,8 @@ import torchvision
 from medmnist import INFO
 from sklearn.model_selection import train_test_split
 
+from logger import logger_regular
+
 DATASET_DIR = "data"
 RANDOM_STATE = 0
 
@@ -42,10 +44,10 @@ def get_medmnist_dataset(data_flag="pathmnist", size=28):
     # print(np.array([x for x, y in train_dataset]).mean(axis=(0, 2, 3)))
     # print(np.array([x for x, y in train_dataset]).std(axis=(0, 2, 3)))
 
-    print(
+    logger_regular.info(
         f"{data_flag} | train: {len(train_dataset)}, val: {len(val_dataset)}, test: {len(test_dataset)}"
     )
-    print(
+    logger_regular.info(
         f"{data_flag} | task: {task}, num_channels: {num_channels}, num_classes: {num_classes}"
     )
     return train_dataset, val_dataset, test_dataset, task, num_channels, num_classes
@@ -116,7 +118,7 @@ def get_mnist_dataset(val_rate=0.2):
     val_dataset = torch.utils.data.Subset(train_dataset, val_indices)
     train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
 
-    print(
+    logger_regular.info(
         f"MNIST | train: {len(train_dataset)}, val: {len(val_dataset)}, test: {len(test_dataset)}"
     )
     return train_dataset, val_dataset, test_dataset
@@ -173,7 +175,7 @@ def get_cifar10_dataset(val_rate=0.2):
     val_dataset = torch.utils.data.Subset(train_dataset, val_indices)
     train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
 
-    print(
+    logger_regular.info(
         f"CIFAR10 | train: {len(train_dataset)}, val: {len(val_dataset)}, test: {len(test_dataset)}"
     )
     return train_dataset, val_dataset, test_dataset
@@ -217,34 +219,35 @@ def get_cifar100_dataset(val_rate=0.2):
     val_dataset = torch.utils.data.Subset(train_dataset, val_indices)
     train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
 
-    print(
+    logger_regular.info(
         f"CIFAR100 | train: {len(train_dataset)}, val: {len(val_dataset)}, test: {len(test_dataset)}"
     )
     return train_dataset, val_dataset, test_dataset
 
 
-def split_dataset_by_rate(dataset: torch.utils.data.Dataset, rate=0.1):
+def split_dataset_by_rate(dataset, rate=0.1):
     indices = np.arange(len(dataset))
     np.random.shuffle(indices)
-    dataset1 = torch.utils.data.Subset(dataset, indices[: int(len(dataset) * rate)])
-    dataset2 = torch.utils.data.Subset(dataset, indices[int(len(dataset) * rate) :])
-    print(f"Splitted | dataset1: {len(dataset1)}, dataset2: {len(dataset2)}")
-    return dataset1, dataset2
+    logger_regular.info(indices[:5])
+    # unseen_dataset = torch.utils.data.Subset(dataset, indices[: int(len(dataset) * rate)])
+    # train_dataset = torch.utils.data.Subset(dataset, indices[int(len(dataset) * rate) :])
+    # print(f"Splitted | unseen_dataset: {len(unseen_dataset)}, train_dataset: {len(train_dataset)}")
+    return indices[: int(len(dataset) * rate)], indices[int(len(dataset) * rate) :]
 
 
-def split_dataset_by_class(
-    dataset: torch.utils.data.Dataset, target_classes: list, rate: float = 0
-):
+def split_dataset_by_class(dataset, target_classes: list, rate: float = 0):
     indices = []
     for i in range(len(dataset)):
         if dataset[i][1] in target_classes:
             indices.append(i)
     np.random.shuffle(indices)
-    print(indices[:5])
-    dataset1 = torch.utils.data.Subset(dataset, indices[: int(len(indices) * rate)])
-    dataset2 = torch.utils.data.Subset(
-        dataset,
-        list(set(range(len(dataset))) - set(indices[: int(len(indices) * rate)])),
+    logger_regular.info(indices[:5])
+    # dataset1 = torch.utils.data.Subset(dataset, indices[: int(len(indices) * rate)])
+    # dataset2 = torch.utils.data.Subset(
+    #     dataset,
+    #     list(set(range(len(dataset))) - set(indices[: int(len(indices) * rate)])),
+    # )
+    # print(f"Splitted | dataset1: {len(dataset1)}, dataset2: {len(dataset2)}")
+    return indices[: int(len(indices) * rate)], list(
+        set(range(len(dataset))) - set(indices[: int(len(indices) * rate)])
     )
-    print(f"Splitted | dataset1: {len(dataset1)}, dataset2: {len(dataset2)}")
-    return dataset1, dataset2
