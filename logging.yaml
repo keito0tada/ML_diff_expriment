@@ -1,0 +1,40 @@
+version: 1
+formatters:
+  consoleFormatter: 
+    format: '[%(asctime)s] %(levelname)-8s | %(message)s'
+    datefmt: '%H:%M:%S'
+  fileFormatter:
+    format: '%(asctime)s %(levelname)s %(module)s %(funcName)s | %(message)s'
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: consoleFormatter
+    stream: ext://sys.stdout
+  console_overwrite:
+    class: logging.StreamHandler
+    formatter: consoleFormatter
+    stream: ext://sys.stdout
+    .: 
+      terminator: "\r" 
+  file:
+    class: logging.handlers.RotatingFileHandler
+    formatter: fileFormatter
+    filename: {{ filepath }} 
+  info_file:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: fileFormatter
+    filename: {{ info_filepath }} 
+loggers:
+  regular:
+    level: DEBUG
+    handlers: [console, file, info_file]
+    propagate: no
+  overwrite:
+    level: DEBUG
+    handlers: [console_overwrite, file, info_file]
+    propagate: no
+
+root:
+  level: DEBUG
+  handlers: [console, file]

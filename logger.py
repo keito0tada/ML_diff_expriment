@@ -1,15 +1,17 @@
 import datetime
-from logging import getLogger, config
-import yaml
+import os
+from logging import config, getLogger
+
 import jinja2
 import torch
-import os
-from src.utils.misc import now
+import yaml
+
+from misc import now
 
 NOW = now()
 TODAY = datetime.date.today()
 
-with open("src/log/logging.yaml", "r", encoding="utf-8") as f:
+with open("logging.yaml", "r", encoding="utf-8") as f:
     os.makedirs(f"log/{TODAY}", exist_ok=True)
     config.dictConfig(
         yaml.safe_load(

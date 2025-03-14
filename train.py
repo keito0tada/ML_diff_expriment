@@ -10,6 +10,8 @@ from torch.utils.data import Dataset
 from torcheval.metrics.functional import multiclass_accuracy
 from tqdm import trange
 
+from logger import logger_regular
+
 
 def train(
     output_dir: str,
@@ -22,6 +24,7 @@ def train(
     num_epochs=100,
     batch_size=64,
 ):
+    logger_regular.info("=====> train")
     start_time = time.perf_counter()
 
     lr = 0.001
@@ -47,8 +50,6 @@ def train(
     train_target = torch.tensor([y for _, y in train_dataset], dtype=torch.int64)
     val_target = torch.tensor([y for _, y in val_dataset], dtype=torch.int64)
     test_target = torch.tensor([y for _, y in test_dataset], dtype=torch.int64)
-
-    print("==> Building and training model...")
 
     model = model.to(device)
 
@@ -79,7 +80,9 @@ def train(
         ).item()
         writer.add_scalar("train_loss", train_loss, epoch)
         writer.add_scalar("train_acc", train_acc, epoch)
-        print(f"Epoch {epoch}: train_loss: {train_loss}, train_acc: {train_acc}")
+        logger_regular.info(
+            f"Epoch {epoch}: train_loss: {train_loss}, train_acc: {train_acc}"
+        )
 
         val_loss, val_outputs = test(model, val_loader, criterion, device)
         val_acc = multiclass_accuracy(
@@ -89,14 +92,14 @@ def train(
         ).item()
         writer.add_scalar("val_loss", val_loss, epoch)
         writer.add_scalar("val_acc", val_acc, epoch)
-        print(f"Epoch {epoch}: val_loss: {val_loss}, val_acc: {val_acc}")
+        logger_regular.info(f"Epoch {epoch}: val_loss: {val_loss}, val_acc: {val_acc}")
 
         if val_acc > best_acc:
             best_epoch = epoch
             best_acc = val_acc
             best_model = deepcopy(model)
-            print("cur_best_acc:", best_acc)
-            print("cur_best_epoch", best_epoch)
+            logger_regular.info(f"cur_best_acc: { best_acc}")
+            logger_regular.info(f"cur_best_epoch: {best_epoch}")
 
     test_loss, test_outputs = test(best_model, test_loader, criterion, device)
 
@@ -105,13 +108,13 @@ def train(
         test_target.to(device),
         num_classes=num_classes,
     ).item()
-    print(f"test_loss: {test_loss}, test_acc: {test_acc}")
+    logger_regular.info(f"test_loss: {test_loss}, test_acc: {test_acc}")
 
     torch.save(best_model.state_dict(), os.path.join(output_dir, "best_model.pth"))
 
     writer.close()
 
-    print(f"==> Finished in {time.perf_counter() - start_time:.2f} s.")
+    logger_regular.info(f"==> Finished in {time.perf_counter() - start_time:.2f} s.")
 
 
 def train_one_epoch(
