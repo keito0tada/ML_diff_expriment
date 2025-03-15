@@ -1,165 +1,311 @@
-import time
-from copy import deepcopy
+import os
+import pickle
 
+import numpy as np
 import torch
-import torch.nn as nn
-import torch.utils.data as data
 from tensorboardX import SummaryWriter
-from torch.utils.data import Dataset
-from torcheval.metrics.functional import multiclass_accuracy
-from tqdm import trange
 
-from logger import logger_regular
+from src.dataset import (
+    get_cifar10_dataset,
+    get_cifar100_dataset,
+    get_medmnist_dataset_with_single_label,
+    get_mnist_dataset,
+    split_dataset_by_class,
+    split_dataset_by_rate,
+)
+from src.logger import logger_regular
+from src.misc import fix_seeds
+from src.model import get_resnet18
+from src.train import train
+
+fix_seeds(0)
+
+ENV = "ayame"
+DEVICE = "cuda:0"
+
+# OUTPUT_DIR = "output"
+OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output2"
+
+DATASETS = [
+    "mnist",
+    "cifar10",
+    "cifar100",
+    "pathmnist",
+    "dermamnist",
+    "octmnist",
+    "pneumoniamnist",
+    "retinamnist",
+    "breastmnist",
+    "bloodmnist",
+    "tissuemnist",
+    "organamnist",
+    "organcmnist",
+    "organsmnist",
+]
+
+# NOW = now()
+NOW = "2025-03-15-02-13-54"
 
 
-def train(
-    model: nn.Module,
-    num_classes: int,
-    train_dataset: Dataset,
-    val_dataset: Dataset,
-    test_dataset: Dataset,
-    writer: SummaryWriter,
-    device: str,
-    num_epochs=100,
-    batch_size=64,
-):
-    logger_regular.info("=====> train")
-    start_time = time.perf_counter()
-
-    lr = 0.001
-    gamma = 0.1
-    milestones = [int(0.5 * num_epochs), int(0.75 * num_epochs)]
-
-    train_loader = data.DataLoader(
-        dataset=train_dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        drop_last=len(train_dataset) % batch_size == 1,
+def generate_default_model(data_flag: str, num_epochs: int = 100, device="cuda:0"):
+    output_dir = os.path.join(OUTPUT_DIR, data_flag, "default")
+    logger_regular.info(
+        "=============================================================="
     )
-    train_loader_for_eval = data.DataLoader(
-        dataset=train_dataset, batch_size=batch_size, shuffle=False
-    )
-    val_loader = data.DataLoader(
-        dataset=val_dataset, batch_size=batch_size, shuffle=False
-    )
-    test_loader = data.DataLoader(
-        dataset=test_dataset, batch_size=batch_size, shuffle=False
-    )
+    logger_regular.info("generate_default_model")
+    logger_regular.info(f"data_flag: {data_flag}, num_epochs: {num_epochs}\n")
 
-    train_target = torch.tensor([y for _, y in train_dataset], dtype=torch.int64)
-    val_target = torch.tensor([y for _, y in val_dataset], dtype=torch.int64)
-    test_target = torch.tensor([y for _, y in test_dataset], dtype=torch.int64)
-
-    model = model.to(device)
-
-    criterion = nn.CrossEntropyLoss()
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=milestones, gamma=gamma
-    )
-
-    # writer = SummaryWriter(log_dir=os.path.join(output_dir, "Tensorboard_Results"))
-
-    best_acc = 0
-    best_epoch = 0
-    best_model = deepcopy(model)
-
-    for epoch in trange(num_epochs):
-        train_one_epoch(model, train_loader, criterion, optimizer, device)
-        scheduler.step()
-
-        train_loss, train_outputs = test(
-            model, train_loader_for_eval, criterion, device
-        )
-        train_acc = multiclass_accuracy(
-            torch.cat(train_outputs, dim=0).to(device),
-            train_target.to(device),
-            num_classes=num_classes,
-        ).item()
-        writer.add_scalar("train_loss", train_loss, epoch)
-        writer.add_scalar("train_acc", train_acc, epoch)
-        logger_regular.info(
-            f"Epoch {epoch}: train_loss: {train_loss}, train_acc: {train_acc}"
+    if data_flag == "mnist":
+        num_channels = 1
+        num_classes = 10
+        train_dataset, val_dataset, test_dataset = get_mnist_dataset()
+    elif data_flag == "cifar10":
+        num_channels = 3
+        num_classes = 10
+        train_dataset, val_dataset, test_dataset = get_cifar10_dataset()
+    elif data_flag == "cifar100":
+        num_channels = 3
+        num_classes = 100
+        train_dataset, val_dataset, test_dataset = get_cifar100_dataset()
+    else:
+        train_dataset, val_dataset, test_dataset, task, num_channels, num_classes = (
+            get_medmnist_dataset_with_single_label(data_flag)
         )
 
-        val_loss, val_outputs = test(model, val_loader, criterion, device)
-        val_acc = multiclass_accuracy(
-            torch.cat(val_outputs, dim=0).to(device),
-            val_target.to(device),
-            num_classes=num_classes,
-        ).item()
-        writer.add_scalar("val_loss", val_loss, epoch)
-        writer.add_scalar("val_acc", val_acc, epoch)
-        logger_regular.info(f"Epoch {epoch}: val_loss: {val_loss}, val_acc: {val_acc}")
+    model = get_resnet18(num_channels=num_channels, num_classes=num_classes)
 
-        if val_acc > best_acc:
-            best_epoch = epoch
-            best_acc = val_acc
-            best_model = deepcopy(model)
-            logger_regular.info(f"cur_best_acc: { best_acc}")
-            logger_regular.info(f"cur_best_epoch: {best_epoch}")
+    writer = SummaryWriter(
+        log_dir=os.path.join(output_dir, f"Tensorboard_Results_{NOW}_{ENV}")
+    )
 
-    test_loss, test_outputs = test(best_model, test_loader, criterion, device)
+    model = train(
+        model,
+        num_classes,
+        train_dataset,
+        val_dataset,
+        test_dataset,
+        writer,
+        device,
+        num_epochs=num_epochs,
+    )
+    model_path = os.path.join(output_dir, f"resnet18_{NOW}_{ENV}.pth")
+    torch.save(model.state_dict(), model_path)
+    logger_regular.info(f"Model saved at {model_path}")
 
-    test_acc = multiclass_accuracy(
-        torch.cat(test_outputs, dim=0).to(device),
-        test_target.to(device),
-        num_classes=num_classes,
-    ).item()
-    logger_regular.info(f"test_loss: {test_loss}, test_acc: {test_acc}")
-
-    writer.close()
-
-    logger_regular.info(f"==> Finished in {time.perf_counter() - start_time:.2f} s.")
-
-    return best_model
+    logger_regular.info(
+        "=============================================================="
+    )
+    logger_regular.info("")
 
 
-def train_one_epoch(
-    model: nn.Module,
-    train_loader: torch.utils.data.DataLoader,
-    criterion,
-    optimizer: torch.optim.Optimizer,
-    device: str,
+def generate_model_with_dataset_reduced_by_rate(
+    data_flag: str, num_epochs: int = 100, device="cuda:0", rate=0.1
 ):
-    losses = []
+    output_dir = os.path.join(OUTPUT_DIR, data_flag, f"rate_{rate:.02f}")
+    logger_regular.info(
+        "=============================================================="
+    )
+    logger_regular.info("generate_model_with_dataset_reduced_by_rate")
+    logger_regular.info(
+        f"data_flag: {data_flag}, num_epochs: {num_epochs}, rate: {rate}\n"
+    )
 
-    model.train()
-    for batch_idx, (inputs, targets) in enumerate(train_loader):
-        inputs = inputs.to(device)
-        targets = targets.to(device)
+    if data_flag == "mnist":
+        num_channels = 1
+        num_classes = 10
+        train_dataset, val_dataset, test_dataset = get_mnist_dataset()
+    elif data_flag == "cifar10":
+        num_channels = 3
+        num_classes = 10
+        train_dataset, val_dataset, test_dataset = get_cifar10_dataset()
+    elif data_flag == "cifar100":
+        num_channels = 3
+        num_classes = 100
+        train_dataset, val_dataset, test_dataset = get_cifar100_dataset()
+    else:
+        train_dataset, val_dataset, test_dataset, task, num_channels, num_classes = (
+            get_medmnist_dataset_with_single_label(data_flag)
+        )
 
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
+    unseen_indices, train_indices = split_dataset_by_rate(train_dataset, rate)
+    os.makedirs(output_dir, exist_ok=True)
+    with open(
+        os.path.join(output_dir, f"indices_{NOW}_{ENV}.pkl"),
+        "wb",
+    ) as f:
+        pickle.dump((unseen_indices, train_indices), f)
+    train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
 
-        losses.append(loss.item())
+    model = get_resnet18(num_channels=num_channels, num_classes=num_classes)
 
-        loss.backward()
-        optimizer.step()
+    writer = SummaryWriter(
+        log_dir=os.path.join(output_dir, f"Tensorboard_Results_{NOW}_{ENV}")
+    )
 
-    return sum(losses)
+    model = train(
+        model,
+        num_classes,
+        train_dataset,
+        val_dataset,
+        test_dataset,
+        writer,
+        device,
+        num_epochs=num_epochs,
+    )
+    model_path = os.path.join(output_dir, f"resnet18_{NOW}_{ENV}.pth")
+    torch.save(model.state_dict(), model_path)
+    logger_regular.info(f"Model saved at {model_path}")
+
+    logger_regular.info(
+        "=============================================================="
+    )
+    logger_regular.info("")
 
 
-def test(
-    model: nn.Module, data_loader: torch.utils.data.DataLoader, criterion, device: str
+def generate_model_with_dataset_excluded_by_class(
+    data_flag: str, num_epochs: int = 100, device="cuda:0", target_class=0, rate=1.0
 ):
-    losses = []
-    all_outputs = []
+    output_dir = os.path.join(
+        OUTPUT_DIR, data_flag, f"class_{target_class}_rate_{rate:.2f}"
+    )
+    logger_regular.info(
+        "=============================================================="
+    )
+    logger_regular.info("generate_model_with_dataset_excluded_by_class")
+    logger_regular.info(
+        f"data_flag: {data_flag}, num_epochs: {num_epochs}, class: {target_class}, rate: {rate}\n"
+    )
 
-    model.eval()
-    with torch.no_grad():
-        for batch_idx, (inputs, targets) in enumerate(data_loader):
-            inputs = inputs.to(device)
-            targets = targets.to(device)
+    if data_flag == "mnist":
+        num_channels = 1
+        num_classes = 10
+        train_dataset, val_dataset, test_dataset = get_mnist_dataset()
+    elif data_flag == "cifar10":
+        num_channels = 3
+        num_classes = 10
+        train_dataset, val_dataset, test_dataset = get_cifar10_dataset()
+    elif data_flag == "cifar100":
+        num_channels = 3
+        num_classes = 100
+        train_dataset, val_dataset, test_dataset = get_cifar100_dataset()
 
-            outputs = model(inputs)
+    else:
+        train_dataset, val_dataset, test_dataset, task, num_channels, num_classes = (
+            get_medmnist_dataset_with_single_label(data_flag)
+        )
 
-            loss = criterion(outputs, targets)
-            outputs = nn.Softmax(dim=1)(outputs).to(device)
+    if target_class >= num_classes:
+        logger_regular.warning("Invalid class.")
+        return
 
-            losses.append(loss.item())
-            all_outputs.append(outputs)
+    unseen_indices, train_indices = split_dataset_by_class(
+        train_dataset, [target_class], rate
+    )
+    os.makedirs(output_dir, exist_ok=True)
+    with open(os.path.join(output_dir, f"indices_{NOW}_{ENV}.pkl"), "wb") as f:
+        pickle.dump((unseen_indices, train_indices), f)
+    train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
 
-    return sum(losses), all_outputs
+    model = get_resnet18(num_channels=num_channels, num_classes=num_classes)
+
+    writer = SummaryWriter(
+        log_dir=os.path.join(output_dir, f"Tensorboard_Results_{NOW}_{ENV}")
+    )
+
+    model = train(
+        model,
+        num_classes,
+        train_dataset,
+        val_dataset,
+        test_dataset,
+        writer,
+        device,
+        num_epochs=num_epochs,
+    )
+    model_path = os.path.join(output_dir, f"resnet18_{NOW}_{ENV}.pth")
+    torch.save(model.state_dict(), model_path)
+    logger_regular.info(f"Model saved at {model_path}")
+
+    logger_regular.info(
+        "=============================================================="
+    )
+    logger_regular.info("")
+
+
+# def main_invalid_class(
+#     data_flag: str,
+#     num_epochs: int = 100,
+#     device="cuda:0",
+#     target_class=0,
+#     invalid_class=1,
+#     rate=1.0,
+# ):
+#     NOW = now()
+#     print("===============================")
+#     print(
+#         f"{data_flag} | epoch: {num_epochs}, classes: {target_class}, invalid: {invalid_class}, rate: {rate}\n"
+#     )
+
+#     if data_flag == "mnist":
+#         num_channels = 1
+#         num_classes = 10
+#         train_dataset, val_dataset, test_dataset = get_mnist_dataset()
+#         unseen_dataset, train_dataset = split_dataset_by_class(
+#             train_dataset, [target_class], rate
+#         )
+#     elif data_flag == "cifar10":
+#         num_channels = 3
+#         num_classes = 10
+#         train_dataset, val_dataset, test_dataset = get_cifar10_dataset()
+#         unseen_dataset, train_dataset = split_dataset_by_class(
+#             train_dataset, [target_class], rate
+#         )
+#     elif data_flag == "cifar100":
+#         num_channels = 3
+#         num_classes = 100
+#         train_dataset, val_dataset, test_dataset = get_cifar100_dataset()
+#         unseen_dataset, train_dataset = split_dataset_by_class(
+#             train_dataset, [target_class], rate
+#         )
+#     else:
+#         train_dataset, val_dataset, test_dataset, task, num_channels, num_classes = (
+#             get_medmnist_dataset_with_single_label(data_flag)
+#         )
+#         unseen_dataset, train_dataset = split_dataset_by_class(
+#             train_dataset, [target_class], rate
+#         )
+
+#     model = get_resnet18(num_channels=num_channels, num_classes=num_classes)
+
+#     train(
+#         os.path.join(OUTPUT_DIR, data_flag, f"{NOW}_{ENV}"),
+#         model,
+#         num_classes,
+#         train_dataset,
+#         val_dataset,
+#         test_dataset,
+#         device,
+#         num_epochs=num_epochs,
+#     )
+
+#     with open(
+#         os.path.join(OUTPUT_DIR, data_flag, f"{NOW}_{ENV}", "experiment.txt"), "w"
+#     ) as f:
+#         f.write(f"{data_flag}, {num_epochs}, classes, {target_class}, rate, {rate}\n")
+
+#     print("==> Done.")
+
+
+for data_flag in DATASETS:
+    # generate_default_model(data_flag, 100, device=DEVICE)
+
+    for rate in np.arange(0.1, 0.55, 0.05).astype(float):
+        generate_model_with_dataset_reduced_by_rate(
+            data_flag, 100, rate=rate, device=DEVICE
+        )
+
+    # for rate in np.arange(0.5, 1.0, 0.05).astype(float):
+    #     for target_class in range(1):
+    #         generate_model_with_dataset_excluded_by_class(
+    #             data_flag, 100, target_class=target_class, rate=rate, device=DEVICE
+    #         )

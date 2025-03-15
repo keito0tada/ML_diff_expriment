@@ -5,7 +5,7 @@ import torchvision
 from medmnist import INFO
 from sklearn.model_selection import train_test_split
 
-from logger import logger_regular
+from src.logger import logger_regular
 
 DATASET_DIR = "data"
 RANDOM_STATE = 0
@@ -232,7 +232,10 @@ def split_dataset_by_rate(dataset, rate=0.1):
     # unseen_dataset = torch.utils.data.Subset(dataset, indices[: int(len(dataset) * rate)])
     # train_dataset = torch.utils.data.Subset(dataset, indices[int(len(dataset) * rate) :])
     # print(f"Splitted | unseen_dataset: {len(unseen_dataset)}, train_dataset: {len(train_dataset)}")
-    return indices[: int(len(dataset) * rate)], indices[int(len(dataset) * rate) :]
+    return (
+        indices[: int(len(dataset) * rate)].tolist(),
+        indices[int(len(dataset) * rate) :].tolist(),
+    )
 
 
 def split_dataset_by_class(dataset, target_classes: list, rate: float = 0):
