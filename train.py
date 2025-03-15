@@ -1,5 +1,6 @@
 import os
 import pickle
+import time
 
 import numpy as np
 import torch
@@ -24,7 +25,7 @@ ENV = "ayame"
 DEVICE = "cuda:0"
 
 # OUTPUT_DIR = "output"
-OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output3"
+OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output4"
 
 DATASETS = [
     "mnist",
@@ -127,13 +128,18 @@ def generate_model_with_dataset_reduced_by_rate(
             get_medmnist_dataset_with_single_label(data_flag)
         )
 
-    unseen_indices, train_indices = split_dataset_by_rate(train_dataset, rate)
-    os.makedirs(output_dir, exist_ok=True)
-    with open(
-        os.path.join(output_dir, f"indices_{NOW}_{ENV}.pkl"),
-        "wb",
-    ) as f:
-        pickle.dump((unseen_indices, train_indices), f)
+    indices_path = os.path.join(output_dir, f"indices_{NOW}_{ENV}.pkl")
+    if os.path.isfile(indices_path):
+        with open(indices_path, "rb") as f:
+            unseen_indices, train_indices = pickle.load(f)
+    else:
+        unseen_indices, train_indices = split_dataset_by_rate(train_dataset, rate)
+        os.makedirs(output_dir, exist_ok=True)
+        with open(
+            indices_path,
+            "wb",
+        ) as f:
+            pickle.dump((unseen_indices, train_indices), f)
     train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
 
     model = get_resnet18(num_channels=num_channels, num_classes=num_classes)
@@ -188,7 +194,6 @@ def generate_model_with_dataset_excluded_by_class(
         num_channels = 3
         num_classes = 100
         train_dataset, val_dataset, test_dataset = get_cifar100_dataset()
-
     else:
         train_dataset, val_dataset, test_dataset, task, num_channels, num_classes = (
             get_medmnist_dataset_with_single_label(data_flag)
@@ -198,12 +203,17 @@ def generate_model_with_dataset_excluded_by_class(
         logger_regular.warning("Invalid class.")
         return
 
-    unseen_indices, train_indices = split_dataset_by_class(
-        train_dataset, [target_class], rate
-    )
-    os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, f"indices_{NOW}_{ENV}.pkl"), "wb") as f:
-        pickle.dump((unseen_indices, train_indices), f)
+    indices_path = os.path.join(output_dir, f"indices_{NOW}_{ENV}.pkl")
+    if os.path.isfile(indices_path):
+        with open(indices_path, "rb") as f:
+            unseen_indices, train_indices = pickle.load(f)
+    else:
+        unseen_indices, train_indices = split_dataset_by_class(
+            train_dataset, [target_class], rate
+        )
+        os.makedirs(output_dir, exist_ok=True)
+        with open(indices_path, "wb") as f:
+            pickle.dump((unseen_indices, train_indices), f)
     train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
 
     model = get_resnet18(num_channels=num_channels, num_classes=num_classes)
@@ -297,6 +307,7 @@ def generate_model_with_dataset_excluded_by_class(
 
 
 def main():
+    start_time = time.perf_counter()
     logger_regular.info("main")
     for data_flag in DATASETS:
         generate_default_model(data_flag, num_epochs=100, device=DEVICE)
@@ -315,9 +326,11 @@ def main():
                     rate=rate,
                     device=DEVICE,
                 )
+    logger_regular.info(f"{time.perf_counter() - start_time}s.")
 
 
 def debug():
+    start_time = time.perf_counter()
     logger_regular.info("debug")
     for data_flag in DATASETS:
         generate_default_model(data_flag, num_epochs=1, device=DEVICE)
@@ -336,6 +349,7 @@ def debug():
                     rate=rate,
                     device=DEVICE,
                 )
+    logger_regular.info(f"{time.perf_counter() - start_time}s.")
 
 
 # main()
