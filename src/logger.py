@@ -6,7 +6,7 @@ import jinja2
 import torch
 import yaml
 
-from misc import now
+from src.misc import now
 
 NOW = now()
 TODAY = datetime.date.today()

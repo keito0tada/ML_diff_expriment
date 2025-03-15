@@ -14,7 +14,7 @@ from src.dataset import (
     split_dataset_by_rate,
 )
 from src.logger import logger_regular
-from src.misc import fix_seeds
+from src.misc import fix_seeds, now
 from src.model import get_resnet18
 from src.train import train
 
@@ -24,7 +24,7 @@ ENV = "ayame"
 DEVICE = "cuda:0"
 
 # OUTPUT_DIR = "output"
-OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output2"
+OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output3"
 
 DATASETS = [
     "mnist",
@@ -43,8 +43,8 @@ DATASETS = [
     "organsmnist",
 ]
 
-# NOW = now()
-NOW = "2025-03-15-02-13-54"
+NOW = now()
+# NOW = "2025-03-15-02-13-54"
 
 
 def generate_default_model(data_flag: str, num_epochs: int = 100, device="cuda:0"):
@@ -296,16 +296,47 @@ def generate_model_with_dataset_excluded_by_class(
 #     print("==> Done.")
 
 
-for data_flag in DATASETS:
-    # generate_default_model(data_flag, 100, device=DEVICE)
+def main():
+    logger_regular.info("main")
+    for data_flag in DATASETS:
+        generate_default_model(data_flag, num_epochs=100, device=DEVICE)
 
-    for rate in np.arange(0.1, 0.55, 0.05).astype(float):
-        generate_model_with_dataset_reduced_by_rate(
-            data_flag, 100, rate=rate, device=DEVICE
-        )
+        for rate in np.arange(0.1, 0.55, 0.05).astype(float):
+            generate_model_with_dataset_reduced_by_rate(
+                data_flag, num_epochs=100, rate=rate, device=DEVICE
+            )
 
-    # for rate in np.arange(0.5, 1.0, 0.05).astype(float):
-    #     for target_class in range(1):
-    #         generate_model_with_dataset_excluded_by_class(
-    #             data_flag, 100, target_class=target_class, rate=rate, device=DEVICE
-    #         )
+        for rate in np.arange(0.5, 1.05, 0.05).astype(float):
+            for target_class in range(1):
+                generate_model_with_dataset_excluded_by_class(
+                    data_flag,
+                    num_epochs=100,
+                    target_class=target_class,
+                    rate=rate,
+                    device=DEVICE,
+                )
+
+
+def debug():
+    logger_regular.info("debug")
+    for data_flag in DATASETS:
+        generate_default_model(data_flag, num_epochs=1, device=DEVICE)
+
+        for rate in np.arange(0.05, 0.1, 0.05).astype(float):
+            generate_model_with_dataset_reduced_by_rate(
+                data_flag, num_epochs=1, rate=rate, device=DEVICE
+            )
+
+        for rate in np.arange(0.5, 0.55, 0.05).astype(float):
+            for target_class in range(1):
+                generate_model_with_dataset_excluded_by_class(
+                    data_flag,
+                    num_epochs=1,
+                    target_class=target_class,
+                    rate=rate,
+                    device=DEVICE,
+                )
+
+
+# main()
+debug()

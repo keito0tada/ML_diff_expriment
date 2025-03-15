@@ -226,15 +226,15 @@ def get_cifar100_dataset(val_rate=0.2):
 
 
 def split_dataset_by_rate(dataset, rate=0.1):
-    indices = np.arange(len(dataset))
+    indices = np.arange(len(dataset)).tolist()
     np.random.shuffle(indices)
     logger_regular.info(indices[:5])
     # unseen_dataset = torch.utils.data.Subset(dataset, indices[: int(len(dataset) * rate)])
     # train_dataset = torch.utils.data.Subset(dataset, indices[int(len(dataset) * rate) :])
     # print(f"Splitted | unseen_dataset: {len(unseen_dataset)}, train_dataset: {len(train_dataset)}")
     return (
-        indices[: int(len(dataset) * rate)].tolist(),
-        indices[int(len(dataset) * rate) :].tolist(),
+        indices[: int(len(dataset) * rate)],
+        indices[int(len(dataset) * rate) :],
     )
 
 

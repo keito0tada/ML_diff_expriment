@@ -1,7 +1,7 @@
 import torch
 from torcheval.metrics.functional import multiclass_accuracy
 
-from train import test
+from src.train import test
 
 
 def get_acc(
