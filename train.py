@@ -25,7 +25,7 @@ ENV = "ayame"
 DEVICE = "cuda:0"
 
 # OUTPUT_DIR = "output"
-OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output4"
+OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output3"
 
 DATASETS = [
     "mnist",
@@ -309,10 +309,11 @@ def generate_model_with_dataset_excluded_by_class(
 def main():
     start_time = time.perf_counter()
     logger_regular.info("main")
+
     for data_flag in DATASETS:
         generate_default_model(data_flag, num_epochs=100, device=DEVICE)
 
-        for rate in np.arange(0.1, 0.55, 0.05).astype(float):
+        for rate in np.arange(0.05, 0.55, 0.05).astype(float):
             generate_model_with_dataset_reduced_by_rate(
                 data_flag, num_epochs=100, rate=rate, device=DEVICE
             )
@@ -326,12 +327,14 @@ def main():
                     rate=rate,
                     device=DEVICE,
                 )
+
     logger_regular.info(f"{time.perf_counter() - start_time}s.")
 
 
 def debug():
     start_time = time.perf_counter()
     logger_regular.info("debug")
+
     for data_flag in DATASETS:
         generate_default_model(data_flag, num_epochs=1, device=DEVICE)
 
@@ -349,8 +352,9 @@ def debug():
                     rate=rate,
                     device=DEVICE,
                 )
+
     logger_regular.info(f"{time.perf_counter() - start_time}s.")
 
 
-# main()
-debug()
+main()
+# debug()
