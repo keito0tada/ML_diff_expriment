@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.utils.data as data
 from tensorboardX import SummaryWriter
-from torcheval.metrics.functional import multiclass_accuracy
+from torcheval.metrics.functional import multiclass_accuracy, multiclass_auroc
 from tqdm import trange
 
 from src.logger import logger_regular
@@ -60,10 +60,10 @@ def train(
 
     # writer = SummaryWriter(log_dir=os.path.join(output_dir, "Tensorboard_Results"))
 
-    best_acc = 0
-    best_acc_epoch = 0
-    # best_auc = 0
-    # best_auc_epoch = 0
+    # best_acc = 0
+    # best_acc_epoch = 0
+    best_auc = 0
+    best_auc_epoch = 0
     # best_loss = 1e8
     # best_loss_epoch = 0
     best_model = deepcopy(model)
@@ -80,10 +80,17 @@ def train(
             train_target.to(device),
             num_classes=num_classes,
         ).item()
+        train_auc = multiclass_auroc(
+            torch.cat(train_outputs, dim=0).to(device),
+            train_target.to(device),
+            num_classes=num_classes,
+            average="macro",
+        ).item()
         writer.add_scalar("train_loss", train_loss, epoch)
         writer.add_scalar("train_acc", train_acc, epoch)
+        writer.add_scalar("train_auc", train_auc, epoch)
         logger_regular.info(
-            f"Epoch {epoch}: train_loss: {train_loss}, train_acc: {train_acc}"
+            f"Epoch {epoch}: train_loss: {train_loss}, train_acc: {train_acc}, train_auc: {train_auc}"
         )
 
         val_loss, val_outputs = test(model, val_loader, criterion, device)
@@ -92,16 +99,25 @@ def train(
             val_target.to(device),
             num_classes=num_classes,
         ).item()
+        val_auc = multiclass_auroc(
+            torch.cat(val_outputs, dim=0).to(device),
+            val_target.to(device),
+            num_classes=num_classes,
+            average="macro",
+        ).item()
         writer.add_scalar("val_loss", val_loss, epoch)
         writer.add_scalar("val_acc", val_acc, epoch)
-        logger_regular.info(f"Epoch {epoch}: val_loss: {val_loss}, val_acc: {val_acc}")
+        writer.add_scalar("val_auc", val_auc, epoch)
+        logger_regular.info(
+            f"Epoch {epoch}: val_loss: {val_loss}, val_acc: {val_acc}, val_auc: {val_auc}"
+        )
 
-        if val_acc > best_acc:
-            best_acc_epoch = epoch
-            best_acc = val_acc
-            best_model = deepcopy(model)
-            logger_regular.info(f"cur_best_acc: { best_acc}")
-            logger_regular.info(f"cur_best_epoch: {best_acc_epoch}")
+        # if val_acc > best_acc:
+        #     best_acc_epoch = epoch
+        #     best_acc = val_acc
+        #     best_model = deepcopy(model)
+        #     logger_regular.info(f"cur_best_acc: { best_acc}")
+        #     logger_regular.info(f"cur_best_epoch: {best_acc_epoch}")
         # if val_loss < best_loss:
         #     best_epoch = epoch
         #     best_loss = val_loss
@@ -111,6 +127,12 @@ def train(
         #         f"cur_best_epoch: {
         #         best_epoch}"
         #     )
+        if val_auc > best_auc:
+            best_auc_epoch = epoch
+            best_auc = val_auc
+            best_model = deepcopy(model)
+            logger_regular.info(f"cur_best_auc: { best_auc}")
+            logger_regular.info(f"cur_best_epoch: {best_auc_epoch}")
 
     test_loss, test_outputs = test(best_model, test_loader, criterion, device)
 
@@ -119,7 +141,15 @@ def train(
         test_target.to(device),
         num_classes=num_classes,
     ).item()
-    logger_regular.info(f"test_loss: {test_loss}, test_acc: {test_acc}")
+    test_auc = multiclass_auroc(
+        torch.cat(test_outputs, dim=0).to(device),
+        test_target.to(device),
+        num_classes=num_classes,
+        average="macro",
+    ).item()
+    logger_regular.info(
+        f"test_loss: {test_loss}, test_acc: {test_acc}, test_auc: {test_auc}"
+    )
 
     writer.close()
 

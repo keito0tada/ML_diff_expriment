@@ -25,7 +25,7 @@ ENV = "ayame"
 DEVICE = "cuda:0"
 
 # OUTPUT_DIR = "output"
-OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output3"
+OUTPUT_DIR = "/nas/keito/ML_diff_experiment/output4"
 
 DATASETS = [
     "mnist",
@@ -318,15 +318,15 @@ def main():
                 data_flag, num_epochs=100, rate=rate, device=DEVICE
             )
 
-        for rate in np.arange(0.5, 1.05, 0.05).astype(float):
-            for target_class in range(1):
-                generate_model_with_dataset_excluded_by_class(
-                    data_flag,
-                    num_epochs=100,
-                    target_class=target_class,
-                    rate=rate,
-                    device=DEVICE,
-                )
+        # for rate in np.arange(0.5, 1.05, 0.05).astype(float):
+        #     for target_class in range(1):
+        #         generate_model_with_dataset_excluded_by_class(
+        #             data_flag,
+        #             num_epochs=100,
+        #             target_class=target_class,
+        #             rate=rate,
+        #             device=DEVICE,
+        #         )
 
     logger_regular.info(f"{time.perf_counter() - start_time}s.")
 
