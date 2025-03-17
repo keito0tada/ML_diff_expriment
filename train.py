@@ -2,6 +2,7 @@ import os
 import pickle
 import time
 
+import medmnist
 import numpy as np
 import torch
 from tensorboardX import SummaryWriter
@@ -46,6 +47,17 @@ DATASETS = [
 
 NOW = now()
 # NOW = "2025-03-15-02-13-54"
+
+
+def get_num_classes(data_flag: str):
+    if data_flag == "mnist":
+        return 10
+    elif data_flag == "cifar10":
+        return 10
+    elif data_flag == "cifar100":
+        return 100
+    else:
+        return len(medmnist.INFO[data_flag]["label"])
 
 
 def generate_default_model(data_flag: str, num_epochs: int = 100, device="cuda:0"):
@@ -318,15 +330,15 @@ def main():
                 data_flag, num_epochs=100, rate=rate, device=DEVICE
             )
 
-        # for rate in np.arange(0.5, 1.05, 0.05).astype(float):
-        #     for target_class in range(1):
-        #         generate_model_with_dataset_excluded_by_class(
-        #             data_flag,
-        #             num_epochs=100,
-        #             target_class=target_class,
-        #             rate=rate,
-        #             device=DEVICE,
-        #         )
+        for rate in np.arange(0.5, 1.05, 0.05).astype(float):
+            for target_class in range(get_num_classes(data_flag=data_flag)):
+                generate_model_with_dataset_excluded_by_class(
+                    data_flag,
+                    num_epochs=100,
+                    target_class=target_class,
+                    rate=rate,
+                    device=DEVICE,
+                )
 
     logger_regular.info(f"{time.perf_counter() - start_time}s.")
 
