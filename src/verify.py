@@ -4,6 +4,21 @@ from torcheval.metrics.functional import multiclass_accuracy
 from src.train import test
 
 
+def get_targets_and_outputs(
+    model: torch.nn.Module,
+    dataset: torch.utils.data.Dataset,
+    batch_size: int,
+    device: str,
+):
+    targets = torch.tensor([y for _, y in dataset], dtype=torch.int64)
+    criterion = torch.nn.CrossEntropyLoss()
+    data_loader = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, shuffle=False
+    )
+    loss, outputs = test(model, data_loader, criterion, device)
+    return torch.cat(outputs, dim=0), targets
+
+
 def get_acc(
     model: torch.nn.Module,
     dataset: torch.utils.data.Dataset,
