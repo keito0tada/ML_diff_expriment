@@ -226,6 +226,7 @@ def main(
     val_rate: float,
     reducing_rates: np.ndarray,
     class_rates: np.ndarray,
+    num_epochs: int,
     device: str,
     timestamp: str,
 ):
@@ -242,7 +243,7 @@ def main(
                 train_rate=train_rate,
                 val_rate=val_rate,
                 timestamp=timestamp,
-                num_epochs=100,
+                num_epochs=num_epochs,
                 device=device,
             )
 
@@ -255,7 +256,7 @@ def main(
                     train_rate=train_rate,
                     val_rate=val_rate,
                     timestamp=timestamp,
-                    num_epochs=100,
+                    num_epochs=num_epochs,
                     rate=rate,
                     device=device,
                 )
@@ -270,7 +271,7 @@ def main(
                         train_rate=train_rate,
                         val_rate=val_rate,
                         timestamp=timestamp,
-                        num_epochs=100,
+                        num_epochs=num_epochs,
                         target_class=target_class,
                         rate=rate,
                         device=device,
@@ -279,6 +280,20 @@ def main(
     logger_regular.info(f"{time.perf_counter() - start_time}s.")
 
 
+# main(
+#     output_dir="/nas/keito/ML_diff_experiment/output",
+#     dataset_dir="dataset",
+#     data_flags=DATA_FLAGS,
+#     archs=["resnet18"],
+#     train_rate=0.4,
+#     val_rate=0.2,
+#     reducing_rates=np.arange(0.05, 1.01, 0.05).astype(float),
+#     class_rates=np.arange(0.05, 1.01, 0.05).astype(float),
+#     num_epochs=100,
+#     device="cuda:0",
+#     timestamp=now(),
+# )
+
 main(
     output_dir="/nas/keito/ML_diff_experiment/output",
     dataset_dir="dataset",
@@ -286,8 +301,9 @@ main(
     archs=["resnet18"],
     train_rate=0.4,
     val_rate=0.2,
-    reducing_rates=np.arange(0.05, 1.01, 0.05).astype(float),
-    class_rates=np.arange(0.05, 1.01, 0.05).astype(float),
+    reducing_rates=np.arange(0.05, 0.06, 0.05).astype(float),
+    class_rates=np.arange(0.05, 0.06, 0.05).astype(float),
+    num_epochs=2,
     device="cuda:0",
     timestamp=now(),
 )
