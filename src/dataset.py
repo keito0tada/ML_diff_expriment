@@ -3,15 +3,50 @@ import numpy as np
 import torch
 import torchvision
 from medmnist import INFO
-from sklearn.model_selection import train_test_split
 
 from src.logger import logger_regular
 
-DATASET_DIR = "data"
-RANDOM_STATE = 0
+DATA_FLAGS = [
+    "mnist",
+    "cifar10",
+    "cifar100",
+    "pathmnist",
+    "dermamnist",
+    "octmnist",
+    "pneumoniamnist",
+    "retinamnist",
+    "breastmnist",
+    "bloodmnist",
+    "tissuemnist",
+    "organamnist",
+    "organcmnist",
+    "organsmnist",
+]
 
 
-def get_medmnist_dataset(data_flag="pathmnist", size=28):
+def get_num_channels(data_flag: str):
+    if data_flag == "mnist":
+        return 1
+    elif data_flag == "cifar10":
+        return 3
+    elif data_flag == "cifar100":
+        return 3
+    else:
+        return medmnist.INFO[data_flag]["n_channels"]
+
+
+def get_num_classes(data_flag: str):
+    if data_flag == "mnist":
+        return 10
+    elif data_flag == "cifar10":
+        return 10
+    elif data_flag == "cifar100":
+        return 100
+    else:
+        return len(medmnist.INFO[data_flag]["label"])
+
+
+def get_medmnist_dataset(data_flag: str, size=28):
     info = INFO[data_flag]
     task = info["task"]
     num_channels = info["n_channels"]
@@ -53,7 +88,7 @@ def get_medmnist_dataset(data_flag="pathmnist", size=28):
     return train_dataset, val_dataset, test_dataset, task, num_channels, num_classes
 
 
-def get_medmnist_dataset_with_single_label(data_flag="pathmnist", size=28):
+def get_medmnist_dataset_with_single_label(data_flag: str, size=28):
     train_dataset, val_dataset, test_dataset, task, num_channels, num_classes = (
         get_medmnist_dataset(data_flag, size)
     )
@@ -88,7 +123,7 @@ def get_medmnist_dataset_with_single_label(data_flag="pathmnist", size=28):
     return train_dataset, val_dataset, test_dataset, task, num_channels, num_classes
 
 
-def get_mnist_dataset(val_rate=0.2):
+def get_mnist_dataset(dataset_dir: str):
     transforms = torchvision.transforms.Compose(
         [
             torchvision.transforms.ToTensor(),
@@ -96,35 +131,25 @@ def get_mnist_dataset(val_rate=0.2):
         ]
     )
     train_dataset = torchvision.datasets.MNIST(
-        root=DATASET_DIR,
+        root=dataset_dir,
         train=True,
         download=True,
         transform=transforms,
     )
     test_dataset = torchvision.datasets.MNIST(
-        root=DATASET_DIR,
+        root=dataset_dir,
         train=False,
         download=True,
         transform=transforms,
     )
 
-    train_indices, val_indices = train_test_split(
-        range(len(train_dataset)),
-        test_size=val_rate,
-        stratify=train_dataset.targets,
-        random_state=RANDOM_STATE,
-    )
-
-    val_dataset = torch.utils.data.Subset(train_dataset, val_indices)
-    train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
-
     logger_regular.info(
-        f"MNIST | train: {len(train_dataset)}, val: {len(val_dataset)}, test: {len(test_dataset)}"
+        f"MNIST | train: {len(train_dataset)}, test: {len(test_dataset)}"
     )
-    return train_dataset, val_dataset, test_dataset
+    return train_dataset, test_dataset
 
 
-def get_cifar10_dataset(val_rate=0.2):
+def get_cifar10_dataset(dataset_dir: str):
     transforms = torchvision.transforms.Compose(
         [
             torchvision.transforms.ToTensor(),
@@ -136,32 +161,16 @@ def get_cifar10_dataset(val_rate=0.2):
     )
 
     train_dataset = torchvision.datasets.CIFAR10(
-        root=DATASET_DIR,
+        root=dataset_dir,
         train=True,
         download=True,
         transform=transforms,
     )
     test_dataset = torchvision.datasets.CIFAR10(
-        root=DATASET_DIR,
+        root=dataset_dir,
         train=False,
         download=True,
         transform=transforms,
-    )
-
-    train_dataset = torch.utils.data.TensorDataset(
-        torch.stack([x for x, y in train_dataset]),
-        torch.tensor([y for x, y in train_dataset], dtype=torch.int64),
-    )
-    test_dataset = torch.utils.data.TensorDataset(
-        torch.stack([x for x, y in test_dataset]),
-        torch.tensor([y for x, y in test_dataset], dtype=torch.int64),
-    )
-
-    train_indices, val_indices = train_test_split(
-        range(len(train_dataset)),
-        test_size=val_rate,
-        stratify=[y for x, y in train_dataset],
-        random_state=RANDOM_STATE,
     )
 
     # print(train_dataset.data.shape)
@@ -172,16 +181,13 @@ def get_cifar10_dataset(val_rate=0.2):
     # print(np.array([x for x, y in train_dataset]).mean(axis=(0, 2, 3)))
     # print(np.array([x for x, y in train_dataset]).std(axis=(0, 2, 3)))
 
-    val_dataset = torch.utils.data.Subset(train_dataset, val_indices)
-    train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
-
     logger_regular.info(
-        f"CIFAR10 | train: {len(train_dataset)}, val: {len(val_dataset)}, test: {len(test_dataset)}"
+        f"CIFAR10 | train: {len(train_dataset)}, test: {len(test_dataset)}"
     )
-    return train_dataset, val_dataset, test_dataset
+    return train_dataset, test_dataset
 
 
-def get_cifar100_dataset(val_rate=0.2):
+def get_cifar100_dataset(dataset_dir: str):
     transforms = torchvision.transforms.Compose(
         [
             torchvision.transforms.ToTensor(),
@@ -192,20 +198,13 @@ def get_cifar100_dataset(val_rate=0.2):
         ]
     )
     train_dataset = torchvision.datasets.CIFAR100(
-        root=DATASET_DIR,
+        root=dataset_dir,
         train=True,
         download=True,
         transform=transforms,
     )
     test_dataset = torchvision.datasets.CIFAR100(
-        root=DATASET_DIR, train=False, download=True, transform=transforms
-    )
-
-    train_indices, val_indices = train_test_split(
-        range(len(train_dataset)),
-        test_size=val_rate,
-        stratify=train_dataset.targets,
-        random_state=RANDOM_STATE,
+        root=dataset_dir, train=False, download=True, transform=transforms
     )
 
     # print(train_dataset.data.shape)
@@ -216,13 +215,10 @@ def get_cifar100_dataset(val_rate=0.2):
     # print(np.array([x for x, y in train_dataset]).mean(axis=(0, 2, 3)))
     # print(np.array([x for x, y in train_dataset]).std(axis=(0, 2, 3)))
 
-    val_dataset = torch.utils.data.Subset(train_dataset, val_indices)
-    train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
-
     logger_regular.info(
-        f"CIFAR100 | train: {len(train_dataset)}, val: {len(val_dataset)}, test: {len(test_dataset)}"
+        f"CIFAR100 | train: {len(train_dataset)}, test: {len(test_dataset)}"
     )
-    return train_dataset, val_dataset, test_dataset
+    return train_dataset, test_dataset
 
 
 def split_dataset_by_rate(dataset, rate=0.1):
@@ -254,3 +250,53 @@ def split_dataset_by_class(dataset, target_classes: list, rate: float = 0):
     return indices[: int(len(indices) * rate)], list(
         set(range(len(dataset))) - set(indices[: int(len(indices) * rate)])
     )
+
+
+def split_dataset_to_train_val_test(
+    datasets: list[torch.utils.data.Dataset], train_rate: float, val_rate: float
+):
+    concatted_dataset = torch.utils.data.ConcatDataset(datasets)
+    indices = np.arange(len(concatted_dataset)).tolist()
+    last_train_index = int(len(concatted_dataset) * train_rate)
+    last_val_index = int(len(concatted_dataset) * (train_rate + val_rate))
+    return (
+        torch.utils.data.Subset(concatted_dataset, indices[:last_train_index]),
+        torch.utils.data.Subset(
+            concatted_dataset, indices[last_train_index:last_val_index]
+        ),
+        torch.utils.data.Subset(concatted_dataset, indices[last_val_index:]),
+    )
+
+
+def get_dataset(data_flag: str, dataset_dir: str, train_rate: float, val_rate: float):
+    if data_flag == "mnist":
+        train_dataset, test_dataset = get_mnist_dataset(dataset_dir=dataset_dir)
+        train_dataset, val_dataset, test_dataset = split_dataset_to_train_val_test(
+            datasets=[train_dataset, test_dataset],
+            train_rate=train_rate,
+            val_rate=val_rate,
+        )
+    elif data_flag == "cifar10":
+        train_dataset, test_dataset = get_mnist_dataset(dataset_dir=dataset_dir)
+        train_dataset, val_dataset, test_dataset = split_dataset_to_train_val_test(
+            datasets=[train_dataset, test_dataset],
+            train_rate=train_rate,
+            val_rate=val_rate,
+        )
+    elif data_flag == "cifar100":
+        train_dataset, test_dataset = get_cifar100_dataset(dataset_dir=dataset_dir)
+        train_dataset, val_dataset, test_dataset = split_dataset_to_train_val_test(
+            datasets=[train_dataset, test_dataset],
+            train_rate=train_rate,
+            val_rate=val_rate,
+        )
+    else:
+        train_dataset, val_dataset, test_dataset, task, num_channels, num_classes = (
+            get_medmnist_dataset_with_single_label(data_flag)
+        )
+        train_dataset, val_dataset, test_dataset = split_dataset_to_train_val_test(
+            datasets=[train_dataset, val_dataset, test_dataset],
+            train_rate=train_rate,
+            val_rate=val_rate,
+        )
+    return train_dataset, val_dataset, test_dataset

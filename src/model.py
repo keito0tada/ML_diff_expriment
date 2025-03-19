@@ -13,3 +13,10 @@ def get_resnet18(num_channels, num_classes):
 def get_vit_b_16(num_channels, num_classes):
     model = vit_b_16(pretrained=False, num_classes=num_classes)
     return model
+
+
+def get_model(arch: str, num_channels: int, num_classes: int):
+    if arch == "resnet18":
+        return get_resnet18(num_channels=num_channels, num_classes=num_classes)
+    else:
+        raise ValueError
