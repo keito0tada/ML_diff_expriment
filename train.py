@@ -75,6 +75,68 @@ def generate_default_model(
     logger_regular.info("")
 
 
+def generate_model_with_one_datapoint_removed(
+    output_dir: str,
+    dataset_dir: str,
+    data_flag: str,
+    arch: str,
+    train_rate: float,
+    val_rate: float,
+    timestamp: str,
+    num_epochs: int,
+    device: str,
+):
+    output_dir = os.path.join(output_dir, data_flag, "one_datapoint_removed")
+    logger_regular.info(
+        "=============================================================="
+    )
+    logger_regular.info("generate_model_with_one_datapoint_removed")
+    logger_regular.info(f"data_flag: {data_flag}, num_epochs: {num_epochs}\n")
+
+    train_dataset, val_dataset, test_dataset = get_dataset(
+        data_flag=data_flag,
+        dataset_dir=dataset_dir,
+        train_rate=train_rate,
+        val_rate=val_rate,
+    )
+    num_channels = get_num_channels(data_flag=data_flag)
+    num_classes = get_num_classes(data_flag=data_flag)
+
+    for removing_index in range(len(train_dataset)):
+        train_indices = list(range(len(train_dataset)))
+        train_indices.pop(removing_index)
+        train_dataset_with_one_datapoint_removed = torch.utils.data.Subset(
+            train_dataset, train_indices
+        )
+
+        model = get_model(arch=arch, num_channels=num_channels, num_classes=num_classes)
+
+        writer = SummaryWriter(
+            log_dir=os.path.join(output_dir, f"Tensorboard_Results_{timestamp}")
+        )
+
+        model = train(
+            model,
+            num_classes,
+            train_dataset_with_one_datapoint_removed,
+            val_dataset,
+            test_dataset,
+            writer,
+            device,
+            num_epochs=num_epochs,
+        )
+        model_path = os.path.join(
+            output_dir, f"{arch}_{removing_index}_{timestamp}.pth"
+        )
+        torch.save(model.state_dict(), model_path)
+        logger_regular.info(f"Model saved at {model_path}")
+
+    logger_regular.info(
+        "=============================================================="
+    )
+    logger_regular.info("")
+
+
 def generate_model_with_dataset_reduced_by_rate(
     output_dir: str,
     dataset_dir: str,
