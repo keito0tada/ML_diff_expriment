@@ -1,5 +1,6 @@
 output/
 data/
+dataset/
 
 # vscode
 .vscode/
