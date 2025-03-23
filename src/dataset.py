@@ -46,7 +46,7 @@ def get_num_classes(data_flag: str):
         return len(medmnist.INFO[data_flag]["label"])
 
 
-def get_medmnist_dataset(data_flag: str, size=28):
+def get_medmnist_dataset(data_flag: str, size: int):
     info = INFO[data_flag]
     task = info["task"]
     num_channels = info["n_channels"]
@@ -83,12 +83,12 @@ def get_medmnist_dataset(data_flag: str, size=28):
         f"{data_flag} | train: {len(train_dataset)}, val: {len(val_dataset)}, test: {len(test_dataset)}"
     )
     logger_regular.info(
-        f"{data_flag} | task: {task}, num_channels: {num_channels}, num_classes: {num_classes}"
+        f"{data_flag} | task: {task}, num_channels: {num_channels}, num_classes: {num_classes}, size: {size}"
     )
     return train_dataset, val_dataset, test_dataset, task, num_channels, num_classes
 
 
-def get_medmnist_dataset_with_single_label(data_flag: str, size=28):
+def get_medmnist_dataset_with_single_label(data_flag: str, size: int):
     train_dataset, val_dataset, test_dataset, task, num_channels, num_classes = (
         get_medmnist_dataset(data_flag, size)
     )
@@ -277,7 +277,7 @@ def get_dataset(data_flag: str, dataset_dir: str, train_rate: float, val_rate: f
             val_rate=val_rate,
         )
     elif data_flag == "cifar10":
-        train_dataset, test_dataset = get_mnist_dataset(dataset_dir=dataset_dir)
+        train_dataset, test_dataset = get_cifar10_dataset(dataset_dir=dataset_dir)
         train_dataset, val_dataset, test_dataset = split_dataset_to_train_val_test(
             datasets=[train_dataset, test_dataset],
             train_rate=train_rate,
@@ -292,7 +292,7 @@ def get_dataset(data_flag: str, dataset_dir: str, train_rate: float, val_rate: f
         )
     else:
         train_dataset, val_dataset, test_dataset, task, num_channels, num_classes = (
-            get_medmnist_dataset_with_single_label(data_flag)
+            get_medmnist_dataset_with_single_label(data_flag, 224)
         )
         train_dataset, val_dataset, test_dataset = split_dataset_to_train_val_test(
             datasets=[train_dataset, val_dataset, test_dataset],

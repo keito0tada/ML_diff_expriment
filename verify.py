@@ -6,6 +6,7 @@ import torch
 from torcheval.metrics.functional import multiclass_accuracy
 
 from src.dataset import (
+    DATA_FLAGS,
     get_dataset,
     get_num_channels,
     get_num_classes,
