@@ -342,30 +342,16 @@ def main(
     logger_regular.info(f"{time.perf_counter() - start_time}s.")
 
 
-# main(
-#     output_dir="/nas/keito/ML_diff_experiment/output",
-#     dataset_dir="dataset",
-#     data_flags=DATA_FLAGS,
-#     archs=["resnet18"],
-#     train_rate=0.4,
-#     val_rate=0.2,
-#     reducing_rates=np.arange(0.05, 1.01, 0.05).astype(float),
-#     class_rates=np.arange(0.05, 1.01, 0.05).astype(float),
-#     num_epochs=100,
-#     device="cuda:0",
-#     timestamp=now(),
-# )
-
 main(
-    output_dir="/nas/keito/ML_diff_experiment/output",
-    dataset_dir="dataset",
+    output_dir="/nas/keito/ML_diff_experiment/output8",
+    dataset_dir="/nas/keito/ML_diff_experiment/dataset",
     data_flags=DATA_FLAGS,
     archs=["resnet18"],
     train_rate=0.4,
     val_rate=0.2,
-    reducing_rates=np.arange(0.05, 0.06, 0.05).astype(float),
-    class_rates=np.arange(0.05, 0.06, 0.05).astype(float),
-    num_epochs=2,
+    reducing_rates=np.arange(0.05, 0.96, 0.05).astype(float),
+    class_rates=np.arange(0.05, 0.96, 0.05).astype(float),
+    num_epochs=100,
     device="cuda:0",
     timestamp=now(),
 )
